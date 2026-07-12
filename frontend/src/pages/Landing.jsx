@@ -185,7 +185,7 @@ export default function Landing() {
           <p className="text-xs text-slate-400">
             Demo logins — admin@transitops.io · driver@transitops.io · safety@transitops.io · finance@transitops.io &nbsp;·&nbsp; password: <span className="font-medium">password123</span>
           </p>
-          <p className="text-xs text-slate-400">© 2025 TransitOps — All rights reserved</p>
+          <p className="text-xs text-slate-400">© 2026 TransitOps — All rights reserved</p>
         </div>
       </footer>
     </div>

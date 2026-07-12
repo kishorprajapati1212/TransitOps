@@ -8,13 +8,16 @@ const asyncHandler = require('../utils/asyncHandler');
 
 router.use(authenticate);
 
-// Reads are available to any authenticated user (Safety Officer monitors compliance).
+// Reads — any authenticated user (Safety Officer monitors compliance)
 router.get('/', v.listQuery, validate, asyncHandler(ctrl.listDrivers));
 router.get('/:id', asyncHandler(ctrl.getDriver));
 
-// Writes are restricted to the Fleet Manager.
+// Full CRUD — Fleet Manager only
 router.post('/', authorize('fleet_manager'), v.create, validate, asyncHandler(ctrl.createDriver));
 router.patch('/:id', authorize('fleet_manager'), v.update, validate, asyncHandler(ctrl.updateDriver));
 router.delete('/:id', authorize('fleet_manager'), asyncHandler(ctrl.deleteDriver));
+
+// Compliance actions — Safety Officer can suspend/unsuspend drivers and update safety scores
+router.patch('/:id/compliance', authorize('fleet_manager', 'safety_officer'), v.compliance, validate, asyncHandler(ctrl.updateCompliance));
 
 module.exports = router;

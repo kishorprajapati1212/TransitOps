@@ -3,7 +3,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { trips as tripApi, vehicles as vehApi, drivers as drvApi } from '../api';
 import {
-  Table, Button, Badge, Modal, Field, inputCls, Icon, Spinner, PageHeader, EmptyState, Card, Toast, ConfirmDialog, cx,
+  Table, Button, Badge, Modal, Field, inputCls, Icon, Spinner, PageHeader, EmptyState, Card, Toast, ConfirmDialog,
 } from '../components/ui';
 import { TRIP_STATUSES, TRIP_STATUS_COLORS } from '../constants';
 
@@ -12,16 +12,12 @@ const STATUS_LABEL = { draft: 'Draft', dispatched: 'Dispatched', completed: 'Com
 export default function Trips() {
   const { user } = useAuth();
   const canManage = ['fleet_manager', 'driver'].includes(user?.role);
+  const isDriver = user?.role === 'driver';
+  const isFleetManager = user?.role === 'fleet_manager';
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', tone: 'success' });
   const [filters, setFilters] = useState({ status: '', search: '' });
-
-  /* Activity log */
-  const [logs, setLogs] = useState([]);
-  const addLog = (action, detail) => {
-    setLogs(prev => [{ time: new Date(), action, detail, id: Date.now() }, ...prev].slice(0, 50));
-  };
 
   /* Create */
   const [createOpen, setCreateOpen] = useState(false);
@@ -83,7 +79,6 @@ export default function Trips() {
       const res = await tripApi.create({ ...form, cargo_weight: Number(form.cargo_weight), planned_distance: Number(form.planned_distance) });
       setCreateOpen(false);
       showToast('Trip created as Draft — ready to dispatch');
-      addLog('Created', `Trip ${res.trip?.trip_code || ''} — ${form.source} → ${form.destination}`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
     finally { setSaving(false); }
@@ -103,7 +98,6 @@ export default function Trips() {
       await tripApi.update(editTarget.id, { ...editForm, cargo_weight: Number(editForm.cargo_weight), planned_distance: Number(editForm.planned_distance) });
       setEditOpen(false);
       showToast('Trip updated successfully');
-      addLog('Updated', `Trip ${editTarget.trip_code}`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
     finally { setEditSaving(false); }
@@ -113,7 +107,6 @@ export default function Trips() {
     try {
       await tripApi.dispatch(t.id);
       showToast('Trip dispatched — vehicle & driver are now On Trip');
-      addLog('Dispatched', `${t.trip_code} — ${t.vehicle_registration || 'vehicle'} + ${t.driver_name || 'driver'} are On Trip`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
   };
@@ -139,7 +132,6 @@ export default function Trips() {
       });
       setCompleteOpen(false);
       showToast('Trip completed — vehicle & driver are now Available');
-      addLog('Completed', `${completeTarget.trip_code} — odometer: ${completeForm.final_odometer} km`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
     finally { setCompleting(false); }
@@ -149,7 +141,6 @@ export default function Trips() {
     try {
       await tripApi.cancel(t.id);
       showToast('Trip cancelled — vehicle & driver restored');
-      addLog('Cancelled', `${t.trip_code}`);
       load();
     } catch (err) { showToast(err.message, 'error'); }
   };
@@ -212,7 +203,7 @@ export default function Trips() {
         title={confirm.title} message={confirm.message} confirmText={confirm.confirmText}
         confirmVariant={confirm.variant} icon={confirm.icon} />
 
-      <PageHeader icon="route" title="Trips" subtitle="Create, dispatch and complete trips — status changes are automatic"
+      <PageHeader icon="route" title={isDriver ? 'My Trips' : 'Trips'} subtitle={isDriver ? 'Trips you created — dispatch, complete or cancel them' : 'Create, dispatch and complete trips — status changes are automatic'}
         action={canManage && <Button onClick={openCreate}><Icon name="plus" className="h-4 w-4" /> New Trip</Button>} />
 
       {/* Filters */}
@@ -243,35 +234,6 @@ export default function Trips() {
         } />
       )}
 
-      {/* Activity Log */}
-      {logs.length > 0 && (
-        <Card className="mt-6 p-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
-                <Icon name="activity" className="h-4 w-4" />
-              </span>
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Activity Log</h3>
-            </div>
-            <button onClick={() => setLogs([])} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Clear</button>
-          </div>
-          <div className="max-h-48 overflow-y-auto space-y-2">
-            {logs.map((log) => (
-              <div key={log.id} className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-800/40">
-                <span className={cx('mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-white text-[10px] font-bold flex-shrink-0',
-                  log.action === 'Created' ? 'bg-indigo-500' : log.action === 'Dispatched' ? 'bg-sky-500' : log.action === 'Completed' ? 'bg-emerald-500' : log.action === 'Cancelled' ? 'bg-rose-500' : 'bg-slate-400'
-                )}>
-                  {log.action.charAt(0)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-200"><span className="font-semibold">{log.action}</span> — {log.detail}</p>
-                  <p className="text-[10px] text-slate-400">{log.time.toLocaleTimeString()}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
 
       {/* ── Create Trip Modal ── */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New Trip"

@@ -33,6 +33,7 @@ export const drivers = {
   get: (id) => handle(client.get(`/drivers/${id}`)),
   create: (data) => handle(client.post('/drivers', data)),
   update: (id, data) => handle(client.patch(`/drivers/${id}`, data)),
+  updateCompliance: (id, data) => handle(client.patch(`/drivers/${id}/compliance`, data)),
   remove: (id) => handle(client.delete(`/drivers/${id}`)),
 };
 
@@ -85,4 +86,17 @@ export const reports = {
     a.remove();
     URL.revokeObjectURL(url);
   },
+};
+
+export const activity = {
+  recent: (limit = 20) => handle(client.get('/activity', { params: { limit } })),
+};
+
+export const users = {
+  list: () => handle(client.get('/users')),
+  get: (id) => handle(client.get(`/users/${id}`)),
+  create: (data) => handle(client.post('/users', data)),
+  changeRole: (id, role) => handle(client.patch(`/users/${id}/role`, { role })),
+  linkDriver: (id, driver_id) => handle(client.post(`/users/${id}/link-driver`, { driver_id })),
+  remove: (id) => handle(client.delete(`/users/${id}`)),
 };

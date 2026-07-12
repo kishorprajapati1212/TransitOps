@@ -27,4 +27,10 @@ const listQuery = [
   query('search').optional({ checkFalsy: true }).isString(),
 ];
 
-module.exports = { create, update, listQuery, ALLOWED_STATUS };
+// Compliance update — Safety Officer can only change status + safety_score
+const compliance = [
+  body('status').optional({ checkFalsy: true }).isIn(ALLOWED_STATUS).withMessage(`status must be one of: ${ALLOWED_STATUS.join(', ')}`),
+  body('safety_score').optional({ checkFalsy: true }).isFloat({ min: 0, max: 100 }).withMessage('safety_score must be between 0 and 100'),
+];
+
+module.exports = { create, update, compliance, listQuery, ALLOWED_STATUS };

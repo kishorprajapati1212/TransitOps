@@ -73,7 +73,7 @@ async function update(id, data) {
   return res.rows[0];
 }
 
-async function list({ status, vehicle_id, driver_id, search } = {}) {
+async function list({ status, vehicle_id, driver_id, search, created_by } = {}) {
   const where = [];
   const params = [];
   if (status) {
@@ -87,6 +87,10 @@ async function list({ status, vehicle_id, driver_id, search } = {}) {
   if (driver_id) {
     params.push(driver_id);
     where.push(`t.driver_id = $${params.length}`);
+  }
+  if (created_by) {
+    params.push(created_by);
+    where.push(`t.created_by = $${params.length}`);
   }
   if (search) {
     params.push(`%${search}%`);

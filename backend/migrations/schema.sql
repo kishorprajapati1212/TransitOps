@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
 -- Driver Management
 CREATE TABLE IF NOT EXISTS drivers (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID REFERENCES users(id) ON DELETE SET NULL,
   name                VARCHAR(120) NOT NULL,
   license_number      VARCHAR(60) NOT NULL UNIQUE,
   license_category    VARCHAR(20) NOT NULL,
@@ -45,6 +46,13 @@ CREATE TABLE IF NOT EXISTS drivers (
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Safe migration: add user_id if table already exists without it
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='drivers' AND column_name='user_id') THEN
+    ALTER TABLE drivers ADD COLUMN user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- Trip Management (lifecycle: draft -> dispatched -> completed/cancelled)
 CREATE TABLE IF NOT EXISTS trips (
@@ -118,3 +126,15 @@ CREATE INDEX IF NOT EXISTS idx_maint_vehicle   ON maintenance_logs(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_maint_status    ON maintenance_logs(status);
 CREATE INDEX IF NOT EXISTS idx_fuel_vehicle    ON fuel_logs(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_vehicle ON expenses(vehicle_id);
+
+-- Activity Logs (persistent, server-side)
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
+  user_name  VARCHAR(120),
+  action     VARCHAR(40) NOT NULL,
+  entity     VARCHAR(40) NOT NULL,
+  detail     TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_logs(created_at DESC);

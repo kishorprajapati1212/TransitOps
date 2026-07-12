@@ -4,15 +4,14 @@ const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 
 /**
- * Seeds a COMPLETE demo dataset so every screen (vehicles, drivers, the full
- * trip lifecycle, maintenance, fuel, expenses and reports) is populated.
+ * Seeds a COMPLETE demo dataset so every screen is populated.
  *
  * Idempotent: if any user already exists, seeding is skipped.
  * To re-seed from scratch run:  npm run db:reset   (migrate + seed)
  *
  * Demo logins (password = password123):
  *   admin@transitops.io   – Fleet Manager (full access)
- *   driver@transitops.io  – Driver
+ *   driver@transitops.io  – Driver (Alex — linked to driver record)
  *   safety@transitops.io  – Safety Officer
  *   finance@transitops.io – Financial Analyst
  */
@@ -29,14 +28,17 @@ async function seed() {
     const passwordHash = await bcrypt.hash('password123', 10);
 
     // ---------------- Users (all four roles) ----------------
-    await client.query(
+    const usersRes = await client.query(
       `INSERT INTO users (name, email, password_hash, role) VALUES
         ('Fleet Manager',  'admin@transitops.io',   $1, 'fleet_manager'),
         ('Alex Driver',    'driver@transitops.io',  $1, 'driver'),
         ('Safety Officer', 'safety@transitops.io',  $1, 'safety_officer'),
-        ('Finance Analyst','finance@transitops.io', $1, 'financial_analyst')`,
+        ('Finance Analyst','finance@transitops.io', $1, 'financial_analyst')
+       RETURNING id, email, role`,
       [passwordHash]
     );
+    const driverUserId = usersRes.rows.find(u => u.email === 'driver@transitops.io').id;
+    const adminUserId = usersRes.rows.find(u => u.email === 'admin@transitops.io').id;
 
     // ---------------- Vehicles (every status) ----------------
     const veh = await client.query(
@@ -55,13 +57,15 @@ async function seed() {
     const van12 = vid('GJ-04-VAN12');
 
     // ---------------- Drivers (every status) ----------------
+    // Alex is linked to the driver user account via user_id
     const drv = await client.query(
-      `INSERT INTO drivers (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status) VALUES
-        ('Alex',    'DL-1001', 'B', '2027-01-15', '9999900001', 92, 'available'),
-        ('Bharat',  'DL-1002', 'C', '2026-12-31', '9999900002', 85, 'available'),
-        ('Charlie', 'DL-1003', 'B', '2024-01-01', '9999900003', 70, 'suspended'),   -- expired license + suspended
-        ('Deepa',   'DL-1004', 'C', '2026-06-30', '9999900004', 88, 'on_trip')       -- currently on a trip
-       RETURNING id, license_number`
+      `INSERT INTO drivers (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status, user_id) VALUES
+        ('Alex',    'DL-1001', 'B', '2027-01-15', '9999900001', 92, 'available', $1),
+        ('Bharat',  'DL-1002', 'C', '2026-12-31', '9999900002', 85, 'available', NULL),
+        ('Charlie', 'DL-1003', 'B', '2024-01-01', '9999900003', 70, 'suspended', NULL),
+        ('Deepa',   'DL-1004', 'C', '2026-06-30', '9999900004', 88, 'on_trip',   NULL)
+       RETURNING id, license_number`,
+      [driverUserId]
     );
     const did = (lic) => drv.rows.find((r) => r.license_number === lic).id;
     const alex = did('DL-1001');
@@ -69,34 +73,32 @@ async function seed() {
     const deepa = did('DL-1004');
 
     // ---------------- Trips (full lifecycle) ----------------
-    // draft
+    // Trips created by admin (fleet manager) — visible to FM
     await client.query(
-      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status)
-       VALUES ('TRP-SEED-DRAFT','Ahmedabad','Gandhinagar',$1,$2,300,30,'draft')`,
-      [van05, alex]
+      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status, created_by)
+       VALUES ('TRP-SEED-DRAFT','Ahmedabad','Gandhinagar',$1,$2,300,30,'draft',$3)`,
+      [van05, alex, adminUserId]
     );
-    // dispatched (vehicle + driver are on_trip, consistent with the rule)
     await client.query(
-      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status, dispatched_at)
-       VALUES ('TRP-SEED-DISP','Surat','Mumbai',$1,$2,600,300,'dispatched',NOW())`,
-      [van12, deepa]
+      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status, dispatched_at, created_by)
+       VALUES ('TRP-SEED-DISP','Surat','Mumbai',$1,$2,600,300,'dispatched',NOW(),$3)`,
+      [van12, deepa, adminUserId]
     );
-    // completed (Van-05 + Bharat; odometer updated, revenue recorded)
+    // Trip created by Alex (driver user) — shows in "My Trips" for driver login
     const doneTrip = await client.query(
       `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance,
-                          status, final_odometer, fuel_consumed, revenue, dispatched_at, completed_at)
-       VALUES ('TRP-SEED-DONE','Ahmedabad','Surat',$1,$2,450,250,'completed',12260,35,15000,
-               NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days')
+                          status, final_odometer, fuel_consumed, revenue, dispatched_at, completed_at, created_by)
+       VALUES ('TRP-SEED-001','Ahmedabad','Surat',$1,$2,450,250,'completed',12260,35,15000,
+               NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', $3)
        RETURNING id`,
-      [trk01, bharat]
+      [trk01, bharat, driverUserId]
     );
     const doneId = doneTrip.rows[0].id;
     await client.query(`UPDATE vehicles SET odometer = 12260 WHERE id = $1`, [trk01]);
-    // cancelled (vehicle + driver restored to available)
     await client.query(
-      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status)
-       VALUES ('TRP-SEED-CANCEL','Rajkot','Jamnagar',$1,$2,200,90,'cancelled')`,
-      [van05, bharat]
+      `INSERT INTO trips (trip_code, source, destination, vehicle_id, driver_id, cargo_weight, planned_distance, status, created_by)
+       VALUES ('TRP-SEED-CANCEL','Rajkot','Jamnagar',$1,$2,200,90,'cancelled',$3)`,
+      [van05, bharat, adminUserId]
     );
 
     // ---------------- Maintenance (open + closed) ----------------

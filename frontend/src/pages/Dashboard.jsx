@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { dashboard as dashApi, maintenance as maintApi, reports as repApi } from '../api';
+import { dashboard as dashApi, maintenance as maintApi, reports as repApi, activity as actApi } from '../api';
 import {
   Card, StatCard, Spinner, Alert, Icon, Button, Badge, Timeline, ProgressBar, SectionTitle, PageHeader,
 } from '../components/ui';
@@ -80,14 +80,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [kpis, setKpis] = useState(null);
   const [overview, setOverview] = useState(null);
+  const [activityLogs, setActivityLogs] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const isAdmin = user?.role === 'fleet_manager';
 
   useEffect(() => {
-    Promise.all([dashApi.get(), maintApi.list(), repApi.overview().catch(() => null)])
-      .then(([d, m, o]) => {
+    const fetches = [dashApi.get(), maintApi.list(), repApi.overview().catch(() => null)];
+    if (isAdmin) fetches.push(actApi.recent(15).catch(() => ({ logs: [] })));
+
+    Promise.all(fetches)
+      .then(([d, m, o, a]) => {
         setKpis({ ...d.kpis, totalMaintenance: (m.maintenance || []).length });
         if (o?.overview) setOverview(o.overview);
+        if (a?.logs) setActivityLogs(a.logs);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -398,6 +404,34 @@ export default function Dashboard() {
           <Timeline steps={WORKFLOW_STEPS} />
         </Card>
       </div>
+
+      {/* Activity Log — Fleet Manager only */}
+      {isAdmin && activityLogs.length > 0 && (
+        <Card className="p-5">
+          <SectionTitle title="Recent Activity" subtitle="Latest actions across the platform" icon="activity" />
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {activityLogs.map((log) => {
+              const colors = { Created: 'bg-indigo-500', Registered: 'bg-indigo-500', Updated: 'bg-amber-500', Dispatched: 'bg-sky-500', Completed: 'bg-emerald-500', Cancelled: 'bg-rose-500', Deleted: 'bg-rose-500' };
+              return (
+                <div key={log.id} className="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5 dark:border-slate-800 dark:bg-slate-800/40">
+                  <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-white text-[10px] font-bold flex-shrink-0 ${colors[log.action] || 'bg-slate-400'}`}>
+                    {log.action.charAt(0)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
+                      <span className="font-semibold">{log.user_name}</span>
+                      <span className="text-slate-400 mx-1">·</span>
+                      <span className="font-medium">{log.action}</span> {log.entity}
+                      {log.detail && <span className="text-slate-400"> — {log.detail}</span>}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{new Date(log.created_at).toLocaleString()}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Role flow guidance */}
       {flow.length > 0 && (

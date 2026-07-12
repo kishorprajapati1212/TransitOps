@@ -2,7 +2,7 @@ const { query } = require('../config/db');
 const { ALLOWED_STATUS } = require('../validation/driver.validation');
 
 const COLUMNS =
-  'id, name, license_number, license_category, license_expiry_date, contact_number, safety_score, status, created_at, updated_at';
+  'id, user_id, name, license_number, license_category, license_expiry_date, contact_number, safety_score, status, created_at, updated_at';
 
 async function licenseExists(licenseNumber, exceptId) {
   const res = await query(
@@ -14,6 +14,11 @@ async function licenseExists(licenseNumber, exceptId) {
 
 async function findById(id) {
   const res = await query(`SELECT ${COLUMNS} FROM drivers WHERE id = $1`, [id]);
+  return res.rows[0];
+}
+
+async function findByUserId(userId) {
+  const res = await query(`SELECT ${COLUMNS} FROM drivers WHERE user_id = $1`, [userId]);
   return res.rows[0];
 }
 
@@ -38,8 +43,8 @@ async function list({ status, search } = {}) {
 async function create(data) {
   const res = await query(
     `INSERT INTO drivers
-       (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)
+       (name, license_number, license_category, license_expiry_date, contact_number, safety_score, status, user_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      RETURNING ${COLUMNS}`,
     [
       data.name,
@@ -49,6 +54,7 @@ async function create(data) {
       data.contact_number || null,
       data.safety_score ?? 0,
       data.status || 'off_duty',
+      data.user_id || null,
     ]
   );
   return res.rows[0];
@@ -63,6 +69,7 @@ async function update(id, data) {
     contact_number: data.contact_number,
     safety_score: data.safety_score,
     status: data.status,
+    user_id: data.user_id,
   };
   const fields = [];
   const params = [];
@@ -86,4 +93,4 @@ async function remove(id) {
   return res.rowCount > 0;
 }
 
-module.exports = { licenseExists, findById, list, create, update, remove, ALLOWED_STATUS };
+module.exports = { licenseExists, findById, findByUserId, list, create, update, remove, ALLOWED_STATUS };
