@@ -1,0 +1,71 @@
+# TransitOps — full stack via Docker Compose
+# Starts PostgreSQL, the Node/Express backend and the React frontend together.
+#
+# Quick start:  docker compose up --build
+#   • Frontend:  http://localhost:8080   (serves the SPA + proxies /api -> backend)
+#   • Backend:   http://localhost:4000/api
+#   • Postgres:  localhost:5432  (user transitops / pass transitops / db transitops)
+#
+# To customize, copy the env values below into a .env file and reference them,
+# or simply edit the values here.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: transitops
+      POSTGRES_PASSWORD: transitops
+      POSTGRES_DB: transitops
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transitops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://transitops:transitops@db:5432/transitops?sslmode=disable
+      JWT_SECRET: dev-secret-change-me
+      PORT: 4000
+      NODE_ENV: production
+      SQL_LOG: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    # Print the UI URL on container start so it is visible in `docker compose up` output.
+    command:
+      - sh
+      - -c
+      - |
+        echo ""
+        echo "=========================================================="
+        echo "  🚚  TransitOps is up!"
+        echo "  ➜  Web UI:        http://localhost:8080"
+        echo "  ➜  API (via UI):  http://localhost:8080/api"
+        echo "  ➜  API (direct):  http://localhost:4000/api"
+        echo "=========================================================="
+        echo ""
+        nginx -g 'daemon off;'
+
+volumes:
+  db_data:
