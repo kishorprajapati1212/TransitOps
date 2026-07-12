@@ -1,14 +1,51 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { dashboard as dashApi, maintenance as maintApi } from '../api';
+import { dashboard as dashApi, maintenance as maintApi, reports as repApi } from '../api';
 import {
   Card, StatCard, Spinner, Alert, Icon, Button, Badge, Timeline, ProgressBar, SectionTitle, PageHeader,
 } from '../components/ui';
 import { WORKFLOW_STEPS, ROLE_FLOW, GET_STARTED_CHECKS, ROLE_LABELS } from '../constants';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  Legend, RadialBarChart, RadialBar, AreaChart, Area, CartesianGrid, LineChart, Line,
+} from 'recharts';
 
-const COLORS = { available: '#10b981', on_trip: '#0ea5e9', in_shop: '#f59e0b', retired: '#64748b' };
+/* ── Colours ── */
+const VEHICLE_COLORS = {
+  Available: '#10b981',
+  'On Trip': '#0ea5e9',
+  'In Shop': '#f59e0b',
+  Retired: '#64748b',
+};
+const TRIP_COLORS = {
+  Active: '#6366f1',
+  Pending: '#f59e0b',
+  Completed: '#10b981',
+  Cancelled: '#ef4444',
+};
+const DRIVER_COLORS = {
+  Available: '#10b981',
+  'On Trip': '#0ea5e9',
+  'Off Duty': '#64748b',
+  Suspended: '#ef4444',
+};
+
+/* Custom tooltip styling for both themes */
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+      {label && <p className="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-300">{label}</p>}
+      {payload.map((p, i) => (
+        <p key={i} className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="inline-block h-2 w-2 rounded-full mr-1.5" style={{ backgroundColor: p.color || p.fill }} />
+          {p.name}: <span className="font-semibold text-slate-700 dark:text-slate-200">{typeof p.value === 'number' ? p.value.toLocaleString() : p.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+};
 
 const QUICK = {
   fleet_manager: [
@@ -32,17 +69,25 @@ const QUICK = {
   ],
 };
 
+/* Custom label for pie charts */
+const renderCustomLabel = ({ name, value, percent }) => {
+  if (value === 0) return null;
+  return `${name} (${value})`;
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [kpis, setKpis] = useState(null);
+  const [overview, setOverview] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([dashApi.get(), maintApi.list()])
-      .then(([d, m]) => {
+    Promise.all([dashApi.get(), maintApi.list(), repApi.overview().catch(() => null)])
+      .then(([d, m, o]) => {
         setKpis({ ...d.kpis, totalMaintenance: (m.maintenance || []).length });
+        if (o?.overview) setOverview(o.overview);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -61,18 +106,39 @@ export default function Dashboard() {
   const pct = Math.round((doneCount / checks.length) * 100);
   const allDone = doneCount === checks.length;
 
+  /* ── Chart data ── */
   const vehiclePie = [
-    { name: 'Available', value: kpis.availableVehicles, key: 'available' },
-    { name: 'On Trip', value: kpis.activeVehicles, key: 'on_trip' },
-    { name: 'In Shop', value: kpis.vehiclesInMaintenance, key: 'in_shop' },
-    { name: 'Retired', value: kpis.retiredVehicles, key: 'retired' },
-  ];
+    { name: 'Available', value: kpis.availableVehicles },
+    { name: 'On Trip', value: kpis.activeVehicles },
+    { name: 'In Shop', value: kpis.vehiclesInMaintenance },
+    { name: 'Retired', value: kpis.retiredVehicles || 0 },
+  ].filter(d => d.value > 0);
+
   const tripBar = [
-    { name: 'Active', value: kpis.activeTrips },
-    { name: 'Pending', value: kpis.pendingTrips },
-    { name: 'Completed', value: kpis.completedTrips },
-    { name: 'Cancelled', value: kpis.cancelledTrips },
+    { name: 'Active', value: kpis.activeTrips, fill: TRIP_COLORS.Active },
+    { name: 'Pending', value: kpis.pendingTrips, fill: TRIP_COLORS.Pending },
+    { name: 'Completed', value: kpis.completedTrips, fill: TRIP_COLORS.Completed },
+    { name: 'Cancelled', value: kpis.cancelledTrips, fill: TRIP_COLORS.Cancelled },
   ];
+
+  const driverPie = [
+    { name: 'Available', value: kpis.availableDrivers || 0 },
+    { name: 'On Trip', value: kpis.driversOnDuty },
+    { name: 'Off Duty', value: Math.max(0, (kpis.totalDrivers || 0) - (kpis.availableDrivers || 0) - kpis.driversOnDuty - (kpis.suspendedDrivers || 0)) },
+    { name: 'Suspended', value: kpis.suspendedDrivers },
+  ].filter(d => d.value > 0);
+
+  const utilizationGauge = [
+    { name: 'Utilization', value: kpis.fleetUtilizationPct, fill: '#6366f1' },
+  ];
+
+  /* Cost breakdown for financial view */
+  const costData = overview ? [
+    { name: 'Fuel', value: overview.totalFuelCost || 0 },
+    { name: 'Maintenance', value: overview.totalMaintenanceCost || 0 },
+  ].filter(d => d.value > 0) : [];
+
+  const COST_COLORS = ['#f59e0b', '#8b5cf6'];
 
   return (
     <div className="space-y-6">
@@ -103,31 +169,202 @@ export default function Dashboard() {
         <StatCard label="Suspended Drivers" value={kpis.suspendedDrivers} icon="alert" accent="rose" />
       </div>
 
-      {/* Charts */}
+      {/* Main Charts Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {/* Vehicle Status Donut */}
         <Card className="p-5">
           <SectionTitle title="Vehicle Status" subtitle="Live distribution across the fleet" icon="truck" />
-          <ResponsiveContainer width="100%" height={260}>
+          <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={vehiclePie} dataKey="value" nameKey="name" outerRadius={90} label={(e) => `${e.name}: ${e.value}`}>
-                {vehiclePie.map((d) => <Cell key={d.key} fill={COLORS[d.key]} />)}
+              <Pie
+                data={vehiclePie}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={3}
+                label={renderCustomLabel}
+                labelLine={true}
+              >
+                {vehiclePie.map((d) => <Cell key={d.name} fill={VEHICLE_COLORS[d.name]} strokeWidth={0} />)}
               </Pie>
-              <Tooltip />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>}
+              />
             </PieChart>
           </ResponsiveContainer>
         </Card>
+
+        {/* Trips by Status - Improved Bar Chart */}
         <Card className="p-5">
           <SectionTitle title="Trips by Status" subtitle="Draft → Dispatched → Completed" icon="route" />
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={tripBar}>
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-              <Tooltip cursor={{ fill: 'rgba(99,102,241,0.08)' }} />
-              <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={tripBar} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.06)' }} />
+              <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={40}>
+                {tripBar.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </Card>
       </div>
+
+      {/* Second Charts Row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Driver Status Donut */}
+        <Card className="p-5">
+          <SectionTitle title="Driver Status" subtitle="Availability breakdown" icon="user" />
+          <ResponsiveContainer width="100%" height={260}>
+            <PieChart>
+              <Pie
+                data={driverPie}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={3}
+                label={({ name, value }) => value > 0 ? `${name}: ${value}` : null}
+                labelLine={true}
+              >
+                {driverPie.map((d) => <Cell key={d.name} fill={DRIVER_COLORS[d.name]} strokeWidth={0} />)}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Fleet Utilization Gauge */}
+        <Card className="p-5">
+          <SectionTitle title="Fleet Utilization" subtitle="Percentage of fleet on trip" icon="gauge" />
+          <div className="flex flex-col items-center justify-center h-[260px]">
+            <ResponsiveContainer width="100%" height={200}>
+              <RadialBarChart
+                cx="50%"
+                cy="50%"
+                innerRadius="60%"
+                outerRadius="90%"
+                barSize={16}
+                data={utilizationGauge}
+                startAngle={180}
+                endAngle={0}
+              >
+                <RadialBar
+                  background={{ fill: 'rgba(148,163,184,0.15)' }}
+                  dataKey="value"
+                  cornerRadius={10}
+                  fill="#6366f1"
+                />
+              </RadialBarChart>
+            </ResponsiveContainer>
+            <div className="-mt-20 text-center">
+              <p className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">{kpis.fleetUtilizationPct}%</p>
+              <p className="text-xs text-slate-400 mt-1">{kpis.activeVehicles} of {kpis.totalVehicles} vehicles on trip</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Cost Breakdown (if overview data is available) */}
+        <Card className="p-5">
+          <SectionTitle title="Cost Breakdown" subtitle="Fuel vs Maintenance spend" icon="currency" />
+          {costData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={costData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  label={({ name, value }) => `${name}: ₹${value.toLocaleString()}`}
+                  labelLine={true}
+                >
+                  {costData.map((d, i) => <Cell key={d.name} fill={COST_COLORS[i]} strokeWidth={0} />)}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value) => <span className="text-xs text-slate-600 dark:text-slate-300">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-[260px] items-center justify-center">
+              <p className="text-sm text-slate-400 dark:text-slate-500">No cost data yet — add fuel logs & maintenance</p>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Summary Stats Row (Financial) */}
+      {overview && (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300">
+                <Icon name="fuel" className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-slate-400">Total Fuel Cost</p>
+                <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(overview.totalFuelCost || 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300">
+                <Icon name="wrench" className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-slate-400">Maintenance Cost</p>
+                <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(overview.totalMaintenanceCost || 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
+                <Icon name="currency" className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-slate-400">Total Revenue</p>
+                <p className="text-lg font-bold text-slate-800 dark:text-white">₹{Number(overview.totalRevenue || 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-5">
+            <div className="flex items-center gap-3">
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${overview.roiPercent >= 0 ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300'}`}>
+                <Icon name="trendUp" className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-xs text-slate-400">Fleet ROI</p>
+                <p className={`text-lg font-bold ${overview.roiPercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                  {overview.roiPercent}%
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Getting started + workflow */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -142,7 +379,7 @@ export default function Dashboard() {
           <ul className="space-y-3">
             {checks.map((c) => (
               <li key={c.key} className="flex items-center gap-3">
-                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${c.done ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800'}`}>
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${c.done ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'}`}>
                   <Icon name={c.done ? 'check' : 'x'} className="h-4 w-4" />
                 </span>
                 <span className={c.done ? 'text-slate-400 line-through dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}>{c.label}</span>

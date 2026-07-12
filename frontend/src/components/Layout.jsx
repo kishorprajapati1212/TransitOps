@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { NavLink, useNavigate, Link, Outlet } from 'react-router-dom';
+import { NavLink, useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { NAV_ITEMS, NAV_BY_ROLE, ROLE_LABELS } from '../constants';
-import { Icon, cx, RoleBadge, Button } from './ui';
+import { NAV_ITEMS, NAV_BY_ROLE } from '../constants';
+import { Icon, cx, RoleBadge } from './ui';
 
 function SidebarContent({ onNavigate }) {
   const { user, logout } = useAuth();
@@ -12,7 +12,8 @@ function SidebarContent({ onNavigate }) {
 
   return (
     <div className="flex h-full flex-col bg-slate-900 text-slate-300">
-      <Link to="/" className="flex items-center gap-3 px-5 py-5">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 py-5">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
           <Icon name="truck" className="h-6 w-6" />
         </span>
@@ -20,9 +21,10 @@ function SidebarContent({ onNavigate }) {
           <p className="text-base font-bold tracking-tight text-white">TransitOps</p>
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Operations</p>
         </div>
-      </Link>
+      </div>
 
-      <nav className="flex-1 space-y-1 px-3">
+      {/* Scrollable nav area */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {items.map((item) => (
           <NavLink
             key={item.key}
@@ -41,17 +43,10 @@ function SidebarContent({ onNavigate }) {
         ))}
       </nav>
 
-      <div className="border-t border-slate-800 p-3">
-        <Link
-          to="/"
-          onClick={onNavigate}
-          className="mb-2 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-        >
-          <Icon name="home" className="h-5 w-5" />
-          Main Home
-        </Link>
+      {/* Fixed bottom — ALWAYS visible */}
+      <div className="flex-shrink-0 border-t border-slate-800 p-3">
         <div className="flex items-center gap-3 rounded-xl bg-slate-800 px-3 py-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-700 font-semibold text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-sm font-semibold text-white">
             {(user?.name || '?').charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0 flex-1">
@@ -61,7 +56,7 @@ function SidebarContent({ onNavigate }) {
           <button
             onClick={logout}
             title="Sign out"
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-700 hover:text-white"
+            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-500/20 hover:text-red-400"
           >
             <Icon name="logout" className="h-5 w-5" />
           </button>
@@ -77,9 +72,9 @@ export default function Layout() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-100 dark:bg-slate-950">
-      {/* Desktop sidebar — solid, professional (no gradient) */}
-      <aside className="hidden w-64 flex-shrink-0 lg:block">
+    <div className="flex h-screen bg-slate-100 dark:bg-slate-950">
+      {/* Desktop sidebar — fixed height, no overflow */}
+      <aside className="hidden w-64 flex-shrink-0 lg:flex lg:flex-col">
         <SidebarContent />
       </aside>
 
@@ -94,7 +89,7 @@ export default function Layout() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Topbar */}
+        {/* Topbar — clean, no Main Home */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
             <button
@@ -111,7 +106,7 @@ export default function Layout() {
               <span className="hidden sm:inline">Dashboard</span>
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={toggle}
               title="Toggle theme"
@@ -119,12 +114,6 @@ export default function Layout() {
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="h-5 w-5" />
             </button>
-            <Link
-              to="/"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 sm:block dark:text-slate-300 dark:hover:bg-slate-800"
-            >
-              Main Home
-            </Link>
           </div>
         </header>
 

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fuel as fuelApi, vehicles as vehApi } from '../api';
 import {
-  Table, Button, Badge, Modal, Field, inputCls, Alert, Icon, Spinner, PageHeader, EmptyState,
+  Table, Button, Badge, Modal, Field, inputCls, Icon, Spinner, PageHeader, EmptyState, Toast, ConfirmDialog,
 } from '../components/ui';
 
 const blank = { vehicle_id: '', liters: '', cost: '', log_date: new Date().toISOString().slice(0, 10) };
@@ -12,20 +12,22 @@ export default function Fuel() {
   const canEdit = ['fleet_manager', 'financial_analyst'].includes(user?.role);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [msg, setMsg] = useState('');
+  const [toast, setToast] = useState({ message: '', tone: 'success' });
+  const showToast = useCallback((message, tone = 'success') => setToast({ message, tone }), []);
+  const clearToast = useCallback(() => setToast({ message: '', tone: 'success' }), []);
 
   const [open, setOpen] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
+  const [confirmDel, setConfirmDel] = useState({ open: false, onConfirm: () => {} });
 
   const load = () => {
     setLoading(true);
     fuelApi
       .list()
-      .then((d) => { setRows(d.fuelLogs); setError(''); })
-      .catch((e) => setError(e.message))
+      .then((d) => { setRows(d.fuelLogs); })
+      .catch((e) => showToast(e.message, 'error'))
       .finally(() => setLoading(false));
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
@@ -33,22 +35,23 @@ export default function Fuel() {
   const openCreate = async () => {
     setForm(blank); setSaving(false);
     try { const v = await vehApi.list(); setVehicles(v.vehicles); setOpen(true); }
-    catch (e) { setError(e.message); }
+    catch (e) { showToast(e.message, 'error'); }
   };
 
   const submit = async (e) => {
     e.preventDefault(); setSaving(true); setError('');
     try {
       await fuelApi.create({ ...form, liters: Number(form.liters), cost: Number(form.cost || 0) });
-      setOpen(false); setMsg('Fuel log added'); load();
-    } catch (err) { setError(err.message); }
+      setOpen(false); showToast('✅ Fuel log added'); load();
+    } catch (err) { showToast(err.message, 'error'); }
     finally { setSaving(false); }
   };
 
   const remove = async (f) => {
-    if (!window.confirm('Delete this fuel log?')) return;
-    try { await fuelApi.remove(f.id); setMsg('Fuel log deleted'); load(); }
-    catch (err) { setError(err.message); }
+    setConfirmDel({ open: true, onConfirm: async () => {
+      try { await fuelApi.remove(f.id); showToast('Fuel log deleted'); load(); }
+      catch (err) { showToast(err.message, 'error'); }
+    }});
   };
 
   const columns = [
@@ -70,8 +73,9 @@ export default function Fuel() {
         subtitle="Record fuel fills — feeds efficiency and cost analytics"
         action={canEdit && <Button onClick={openCreate}><Icon name="plus" className="h-4 w-4" /> Add Fuel Log</Button>}
       />
-      {error && <Alert tone="error" className="mb-4">{error}</Alert>}
-      {msg && <Alert tone="success" className="mb-4">{msg}</Alert>}
+
+      <Toast message={toast.message} tone={toast.tone} onClose={clearToast} />
+      <ConfirmDialog open={confirmDel.open} onClose={() => setConfirmDel(c => ({ ...c, open: false }))} onConfirm={confirmDel.onConfirm} title="Delete?" message="This cannot be undone." confirmText="Delete" />
 
       {loading ? (
         <div className="flex h-40 items-center justify-center"><Spinner className="h-7 w-7 text-indigo-500" /></div>

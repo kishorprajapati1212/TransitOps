@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 /* ------------------------------------------------------------------ */
@@ -26,6 +26,7 @@ const PATHS = {
   search: 'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z',
   check: 'M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   x: 'M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  xSmall: 'M6 18L18 6M6 6l12 12',
   arrow: 'M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3',
   flag: 'M3 3v18m0-13.5h12l-2.25 3 2.25 3H3',
   shield: 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z',
@@ -51,26 +52,22 @@ const PATHS = {
   lock: 'M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-1.5 0h12a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5H4.5a1.5 1.5 0 01-1.5-1.5v-7.5A1.5 1.5 0 014.5 10.5z',
   mail: 'M21.75 6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75z',
   eye: 'M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
+  edit: 'M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10',
+  phone: 'M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z',
+  send: 'M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5',
+  ban: 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636',
   refresh: 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99',
   trendUp: 'M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941',
   trendDown: 'M2.25 6L9 12.75l4.306-4.307a11.95 11.95 0 015.814 5.519l2.74 1.22m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941',
-  settings: 'M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456c.516-.194 1.094.02 1.39.512l1.296 2.247a.984.984 0 01-.213 1.231l-1.009.692a1.073 1.073 0 00-.475.676l-.192 1.281c-.093.542-.56.94-1.11.94h-2.593c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.073 1.073 0 00-.475-.676l-1.009-.692a.984.984 0 01-.213-1.231l1.296-2.247c.296-.492.874-.706 1.39-.512l1.217.456c.355.133.75.072 1.075-.124a5.77 5.77 0 01.22-.127c.332-.183.582-.496.645-.87l.213-1.28zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
+  settings: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
 };
 
 export function Icon({ name, className = 'h-5 w-5', strokeWidth = 1.7 }) {
   const d = PATHS[name];
   if (!d) return null;
   return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={d} />
     </svg>
   );
@@ -97,13 +94,15 @@ const BTN = {
   outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800 focus-visible:ring-slate-400',
   danger: 'bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-rose-500 shadow-sm',
   ghost: 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 focus-visible:ring-slate-400',
+  success: 'bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-emerald-500 shadow-sm',
+  warning: 'bg-amber-500 text-white hover:bg-amber-400 focus-visible:ring-amber-500 shadow-sm',
 };
 export function Button({ variant = 'primary', size = 'md', className = '', children, as: As = 'button', ...rest }) {
-  const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-5 py-2.5 text-base' };
+  const sizes = { xs: 'px-2 py-1 text-[11px]', sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-5 py-2.5 text-base' };
   return (
     <As
       className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex items-center justify-center gap-1.5 rounded-xl font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-60',
         BTN[variant],
         sizes[size],
         className
@@ -119,16 +118,17 @@ export function Button({ variant = 'primary', size = 'md', className = '', child
 /* Badge                                                               */
 /* ------------------------------------------------------------------ */
 const BADGE = {
-  emerald: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
-  sky: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
-  amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
-  rose: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
-  slate: 'bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300',
-  violet: 'bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
-  indigo: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
+  emerald: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+  sky: 'bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
+  amber: 'bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+  rose: 'bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300',
+  slate: 'bg-slate-100 text-slate-600 dark:bg-slate-500/15 dark:text-slate-300',
+  indigo: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
+  violet: 'bg-violet-50 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300',
 };
 const DOT = {
-  emerald: 'bg-emerald-500', sky: 'bg-sky-500', amber: 'bg-amber-500', rose: 'bg-rose-500', slate: 'bg-slate-400', violet: 'bg-violet-500', indigo: 'bg-indigo-500',
+  emerald: 'bg-emerald-500', sky: 'bg-sky-500', amber: 'bg-amber-500',
+  rose: 'bg-rose-500', slate: 'bg-slate-400', indigo: 'bg-indigo-500', violet: 'bg-violet-500',
 };
 export function Badge({ color = 'slate', children, dot = true, className = '' }) {
   return (
@@ -139,13 +139,16 @@ export function Badge({ color = 'slate', children, dot = true, className = '' })
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* RoleBadge                                                           */
+/* ------------------------------------------------------------------ */
+const ROLE_COLOR = { fleet_manager: 'indigo', driver: 'sky', safety_officer: 'amber', financial_analyst: 'violet' };
 export function RoleBadge({ role }) {
-  const map = { fleet_manager: 'indigo', driver: 'sky', safety_officer: 'amber', financial_analyst: 'violet' };
-  return <Badge color={map[role] || 'slate'}>{role ? role.replace('_', ' ') : '—'}</Badge>;
+  return <Badge color={ROLE_COLOR[role] || 'slate'} dot={false}>{(role || '').replace(/_/g, ' ')}</Badge>;
 }
 
 /* ------------------------------------------------------------------ */
-/* Card / SectionTitle / PageHeader                                     */
+/* Card                                                                */
 /* ------------------------------------------------------------------ */
 export function Card({ className = '', children, ...rest }) {
   return (
@@ -155,17 +158,20 @@ export function Card({ className = '', children, ...rest }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* SectionTitle                                                        */
+/* ------------------------------------------------------------------ */
 export function SectionTitle({ title, subtitle, icon, action }) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center gap-2.5">
         {icon && (
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
-            <Icon name={icon} className="h-5 w-5" />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-300">
+            <Icon name={icon} className="h-4 w-4" />
           </span>
         )}
         <div>
-          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">{title}</h3>
           {subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
         </div>
       </div>
@@ -174,17 +180,20 @@ export function SectionTitle({ title, subtitle, icon, action }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/* PageHeader                                                          */
+/* ------------------------------------------------------------------ */
 export function PageHeader({ title, subtitle, action, icon }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div className="flex items-center gap-3">
         {icon && (
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl brand-gradient text-white shadow-sm">
-            <Icon name={icon} className="h-6 w-6" />
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-sm">
+            <Icon name={icon} className="h-5 w-5" />
           </span>
         )}
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl">{title}</h1>
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">{title}</h1>
           {subtitle && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
         </div>
       </div>
@@ -218,13 +227,6 @@ export function StatCard({ label, value, sub, icon, accent = 'indigo', trend }) 
           <Icon name={icon} className="h-6 w-6" />
         </span>
       </div>
-      {trend && (
-        <div className="mt-3 flex items-center gap-1 text-xs">
-          <Icon name={trend.dir === 'up' ? 'trendUp' : 'trendDown'} className={cx('h-4 w-4', trend.dir === 'up' ? 'text-emerald-500' : 'text-rose-500')} />
-          <span className={trend.dir === 'up' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>{trend.value}</span>
-          <span className="text-slate-400">{trend.label}</span>
-        </div>
-      )}
     </Card>
   );
 }
@@ -243,6 +245,38 @@ export function Field({ label, error, hint, children, className = '' }) {
         <span className="mt-1 block text-xs text-slate-400">{hint}</span>
       ) : null}
     </label>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Toast — fixed-position notification                                 */
+/* ------------------------------------------------------------------ */
+export function Toast({ message, tone = 'success', onClose }) {
+  const colors = {
+    success: 'bg-emerald-600 text-white',
+    error: 'bg-rose-600 text-white',
+    warning: 'bg-amber-500 text-white',
+    info: 'bg-indigo-600 text-white',
+  };
+  const icons = { success: 'check', error: 'alert', warning: 'alert', info: 'info' };
+
+  useEffect(() => {
+    if (!message) return;
+    const t = setTimeout(onClose, 5000);
+    return () => clearTimeout(t);
+  }, [message, onClose]);
+
+  if (!message) return null;
+  return (
+    <div className="fixed top-4 right-4 z-[100] animate-slide-in">
+      <div className={cx('flex items-center gap-2.5 rounded-xl px-4 py-3 shadow-lg text-sm font-medium max-w-md', colors[tone])}>
+        <Icon name={icons[tone]} className="h-5 w-5 flex-shrink-0" />
+        <span className="flex-1">{message}</span>
+        <button onClick={onClose} className="ml-2 rounded-lg p-0.5 hover:bg-white/20 transition">
+          <Icon name="xSmall" className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -281,7 +315,7 @@ export function Modal({ open, onClose, title, subtitle, footer, children, size =
             {subtitle && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>}
           </div>
           <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
-            <Icon name="x" className="h-5 w-5" />
+            <Icon name="xSmall" className="h-5 w-5" />
           </button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{children}</div>
@@ -304,7 +338,7 @@ export function Table({ columns, rows, empty, className = '' }) {
         <thead className="bg-slate-50 dark:bg-slate-800/50">
           <tr>
             {columns.map((c) => (
-              <th key={c.key} className="whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-500 dark:text-slate-400">
+              <th key={c.key} className={cx('whitespace-nowrap px-4 py-3 text-left font-semibold text-slate-500 dark:text-slate-400', c.sticky && 'sticky right-0 bg-slate-50 dark:bg-slate-800/50')}>
                 {c.label}
               </th>
             ))}
@@ -314,7 +348,12 @@ export function Table({ columns, rows, empty, className = '' }) {
           {rows.map((r, i) => (
             <tr key={r.id || i} className="transition hover:bg-slate-50 dark:hover:bg-slate-800/40">
               {columns.map((c) => (
-                <td key={c.key} className={cx('whitespace-nowrap px-4 py-3 text-slate-700 dark:text-slate-300', c.className)}>
+                <td key={c.key} className={cx(
+                  'px-4 py-3 text-slate-700 dark:text-slate-300',
+                  c.wrap ? '' : 'whitespace-nowrap',
+                  c.sticky && 'sticky right-0 bg-white dark:bg-slate-900',
+                  c.className
+                )}>
                   {c.render ? c.render(r) : r[c.key]}
                 </td>
               ))}
@@ -381,5 +420,59 @@ export function Timeline({ steps }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Tabs                                                                */
+/* ------------------------------------------------------------------ */
+export function Tabs({ tabs, active, onChange }) {
+  return (
+    <div className="flex gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      {tabs.map((t) => (
+        <button
+          key={t.key}
+          onClick={() => onChange(t.key)}
+          className={cx(
+            'rounded-lg px-3.5 py-2 text-sm font-medium transition',
+            active === t.key
+              ? 'bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+          )}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* ConfirmDialog — replaces window.confirm with a professional modal   */
+/* ------------------------------------------------------------------ */
+export function ConfirmDialog({ open, onClose, onConfirm, title, message, confirmText = 'Confirm', confirmVariant = 'danger', icon = 'alert' }) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col items-center text-center">
+          <span className={cx(
+            'mb-4 flex h-14 w-14 items-center justify-center rounded-full',
+            confirmVariant === 'danger' ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400'
+              : confirmVariant === 'success' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400'
+              : 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400'
+          )}>
+            <Icon name={icon} className="h-7 w-7" />
+          </span>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{message}</p>
+        </div>
+        <div className="mt-6 flex gap-3">
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Cancel</Button>
+          <Button variant={confirmVariant} className="flex-1" onClick={() => { onConfirm(); onClose(); }}>{confirmText}</Button>
+        </div>
+      </div>
+    </div>
   );
 }

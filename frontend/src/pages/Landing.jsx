@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { WORKFLOW_STEPS, ROLE_INFO, ROLE_LABELS } from '../constants';
-import { Icon, Button, Timeline, cx, Badge, RoleBadge } from '../components/ui';
+import { WORKFLOW_STEPS, ROLE_INFO } from '../constants';
+import { Icon, Button, Timeline, Badge, RoleBadge } from '../components/ui';
 
 const FEATURES = [
   { icon: 'truck', title: 'Vehicle Registry', desc: 'Master list of vehicles with capacity, odometer, cost and live status (Available / On Trip / In Shop / Retired).' },
@@ -24,7 +24,7 @@ const RULES = [
 
 export default function Landing() {
   const { theme, toggle } = useTheme();
-  const { user, token } = useAuth();
+  const { token } = useAuth();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
@@ -32,7 +32,7 @@ export default function Landing() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl brand-gradient text-white shadow-sm">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
               <Icon name="truck" className="h-5 w-5" />
             </span>
             <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">TransitOps</span>
@@ -42,13 +42,9 @@ export default function Landing() {
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} className="h-5 w-5" />
             </button>
             {token ? (
-              <Link to="/dashboard">
-                <Button size="sm">Go to app</Button>
-              </Link>
+              <Link to="/dashboard"><Button size="sm">Go to Dashboard</Button></Link>
             ) : (
-              <Link to="/login">
-                <Button size="sm">Sign in</Button>
-              </Link>
+              <Link to="/login"><Button size="sm">Sign in</Button></Link>
             )}
           </div>
         </div>
@@ -57,37 +53,23 @@ export default function Landing() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-slate-50 dark:bg-slate-950">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-indigo-400/10 blur-3xl" />
-        <div className="absolute -left-20 top-40 h-72 w-72 rounded-full bg-indigo-400/10 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-5 py-20 text-center sm:py-28">
           <span className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/70 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-slate-900/60 dark:text-indigo-300">
-            <Icon name="bolt" className="h-4 w-4" /> 8-hour hackathon-ready transport platform
+            <Icon name="bolt" className="h-4 w-4" /> Enterprise-grade Transport Operations
           </span>
-          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl">
-            Smart Transport <span className="brand-gradient bg-clip-text text-transparent">Operations Platform</span>
+          <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+            Smart Transport <span className="text-indigo-600 dark:text-indigo-400">Operations Platform</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
             Digitize your fleet end-to-end — vehicles, drivers, dispatch, maintenance and expenses — with real-time
             operational insight and business rules enforced automatically.
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login">
-              <Button size="lg">
-                <Icon name="arrow" className="h-5 w-5" /> Get started
-              </Button>
-            </Link>
-            <a href="#workflow">
-              <Button size="lg" variant="outline">
-                <Icon name="route" className="h-5 w-5" /> See how it works
-              </Button>
-            </a>
+            <Link to="/login"><Button size="lg"><Icon name="arrow" className="h-5 w-5" /> Get started</Button></Link>
+            <a href="#workflow"><Button size="lg" variant="outline"><Icon name="route" className="h-5 w-5" /> See how it works</Button></a>
           </div>
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {[
-              ['4', 'User roles (RBAC)'],
-              ['9', 'Step automated workflow'],
-              ['10', 'Business rules enforced'],
-              ['100%', 'Raw SQL, no ORM'],
-            ].map(([v, l]) => (
+            {[['4', 'User Roles (RBAC)'], ['9', 'Step Workflow'], ['10', 'Business Rules'], ['100%', 'Raw SQL']].map(([v, l]) => (
               <div key={l} className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-5 dark:border-slate-800 dark:bg-slate-900/60">
                 <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{v}</p>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{l}</p>
@@ -122,18 +104,17 @@ export default function Landing() {
           <div className="mb-10 grid gap-8 lg:grid-cols-2">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300">
-                <Icon name="route" className="h-4 w-4" /> Example workflow
+                <Icon name="route" className="h-4 w-4" /> Example Workflow
               </span>
               <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">How a delivery flows through TransitOps</h2>
               <p className="mt-3 text-slate-500 dark:text-slate-400">
-                From registering <strong>Van-05</strong> to closing the books in Reports — every status change is automatic
-                and every business rule is enforced server-side.
+                From registering <strong>Van-05</strong> to closing the books — every status change is automatic and every business rule is enforced server-side.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Badge color="emerald">auto status</Badge>
-                <Badge color="sky">capacity check</Badge>
-                <Badge color="amber">maintenance</Badge>
-                <Badge color="violet">analytics</Badge>
+                <Badge color="emerald">Auto Status</Badge>
+                <Badge color="sky">Capacity Check</Badge>
+                <Badge color="amber">Maintenance</Badge>
+                <Badge color="violet">Analytics</Badge>
               </div>
             </div>
             <div className="card p-6">
@@ -153,7 +134,7 @@ export default function Landing() {
           {Object.entries(ROLE_INFO).map(([key, info]) => (
             <div key={key} className="card flex flex-col p-6">
               <div className="flex items-center justify-between">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl brand-gradient text-white shadow-sm">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
                   <Icon name="shield" className="h-6 w-6" />
                 </span>
                 <RoleBadge role={key} />
@@ -196,19 +177,15 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA / footer */}
+      {/* Footer */}
       <footer className="border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-5 py-10 text-center">
           <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">Ready to run your fleet?</p>
-          <Link to="/login">
-            <Button size="lg">
-              <Icon name="arrow" className="h-5 w-5" /> Open the app
-            </Button>
-          </Link>
+          <Link to="/login"><Button size="lg"><Icon name="arrow" className="h-5 w-5" /> Open the app</Button></Link>
           <p className="text-xs text-slate-400">
             Demo logins — admin@transitops.io · driver@transitops.io · safety@transitops.io · finance@transitops.io &nbsp;·&nbsp; password: <span className="font-medium">password123</span>
           </p>
-          <p className="text-xs text-slate-400">© 2024 TransitOps — Hackathon Edition</p>
+          <p className="text-xs text-slate-400">© 2025 TransitOps — All rights reserved</p>
         </div>
       </footer>
     </div>

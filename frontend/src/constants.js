@@ -83,10 +83,10 @@ export const MAINTENANCE_STATUS_COLORS = { open: 'amber', closed: 'emerald' };
 // Which sidebar items a given role may see (UX only; backend still enforces RBAC).
 // The landing page is public; the items below live inside the authenticated app.
 export const NAV_BY_ROLE = {
-  fleet_manager: ['dashboard', 'vehicles', 'drivers', 'trips', 'maintenance', 'fuel', 'expenses', 'reports'],
-  driver: ['dashboard', 'trips'],
-  safety_officer: ['dashboard', 'drivers', 'reports'],
-  financial_analyst: ['dashboard', 'fuel', 'expenses', 'reports'],
+  fleet_manager: ['dashboard', 'vehicles', 'drivers', 'trips', 'maintenance', 'fuel', 'expenses', 'reports', 'settings'],
+  driver: ['dashboard', 'trips', 'settings'],
+  safety_officer: ['dashboard', 'drivers', 'reports', 'settings'],
+  financial_analyst: ['dashboard', 'fuel', 'expenses', 'reports', 'settings'],
 };
 
 export const NAV_ITEMS = [
@@ -98,6 +98,7 @@ export const NAV_ITEMS = [
   { key: 'fuel', label: 'Fuel & Expense', icon: 'fuel', path: '/fuel' },
   { key: 'expenses', label: 'Expenses', icon: 'receipt', path: '/expenses' },
   { key: 'reports', label: 'Reports', icon: 'chart', path: '/reports' },
+  { key: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
 ];
 
 // The example workflow from the problem statement — used on the landing page

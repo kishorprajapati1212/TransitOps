@@ -67,7 +67,7 @@ export default function Login() {
           </ul>
         </div>
 
-        <p className="relative text-xs text-white/50">© 2024 TransitOps — Hackathon Edition</p>
+        <p className="relative text-xs text-white/50">© 2025 TransitOps — All rights reserved</p>
       </div>
 
       {/* Form panel */}

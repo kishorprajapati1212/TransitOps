@@ -17,29 +17,15 @@ body {
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Thin scrollbars for a cleaner dashboard feel */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-slate-300 dark:bg-slate-700;
-}
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
+/* Thin scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-slate-300 dark:bg-slate-700; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
 
 @layer components {
-  /* Simple, professional single-brand accent (no loud rainbow gradients). */
-  .brand-gradient {
-    @apply bg-indigo-600;
-  }
-  .brand-gradient-soft {
-    @apply bg-indigo-50 dark:bg-indigo-950/30;
-  }
-  .card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900;
-  }
+  .brand-gradient { @apply bg-indigo-600; }
+  .brand-gradient-soft { @apply bg-indigo-50 dark:bg-indigo-950/30; }
+  .card { @apply rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900; }
   .input-base {
     @apply block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 shadow-sm transition
            placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30
@@ -47,14 +33,28 @@ body {
   }
 }
 
-/* Recharts tooltip dark-mode tweaks */
+/* Toast slide-in animation */
+@keyframes slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+.animate-slide-in { animation: slide-in 0.3s ease-out; }
+
+/* Recharts dark mode */
 .recharts-default-tooltip {
   border-radius: 12px !important;
   border: 1px solid rgb(203 213 225) !important;
   background: #fff !important;
+  color: #334155 !important;
 }
 .dark .recharts-default-tooltip {
   border-color: rgb(30 41 59) !important;
-  background: #0f172a !important;
+  background: #1e293b !important;
   color: #e2e8f0 !important;
 }
+.dark .recharts-text { fill: #94a3b8 !important; }
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line { stroke: rgba(148,163,184,0.15) !important; }
+.dark .recharts-legend-item-text { color: #cbd5e1 !important; }
+.dark .recharts-pie-label-text { fill: #cbd5e1 !important; }
+.dark select option { background-color: #0f172a; color: #e2e8f0; }
