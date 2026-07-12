@@ -83,10 +83,10 @@ export const MAINTENANCE_STATUS_COLORS = { open: 'amber', closed: 'emerald' };
 // Which sidebar items a given role may see (UX only; backend still enforces RBAC).
 // The landing page is public; the items below live inside the authenticated app.
 export const NAV_BY_ROLE = {
-  fleet_manager: ['dashboard', 'vehicles', 'drivers', 'trips', 'maintenance', 'fuel', 'expenses', 'reports', 'users', 'settings'],
+  fleet_manager: ['dashboard', 'vehicles', 'drivers', 'trips', 'maintenance', 'fuel', 'reports', 'users', 'settings'],
   driver: ['dashboard', 'trips', 'settings'],
   safety_officer: ['dashboard', 'drivers', 'reports', 'settings'],
-  financial_analyst: ['dashboard', 'fuel', 'expenses', 'reports', 'settings'],
+  financial_analyst: ['dashboard', 'fuel', 'reports', 'settings'],
 };
 
 export const NAV_ITEMS = [
@@ -96,7 +96,6 @@ export const NAV_ITEMS = [
   { key: 'trips', label: 'Trips', icon: 'route', path: '/trips' },
   { key: 'maintenance', label: 'Maintenance', icon: 'wrench', path: '/maintenance' },
   { key: 'fuel', label: 'Fuel & Expense', icon: 'fuel', path: '/fuel' },
-  { key: 'expenses', label: 'Expenses', icon: 'receipt', path: '/expenses' },
   { key: 'reports', label: 'Reports', icon: 'chart', path: '/reports' },
   { key: 'users', label: 'Users', icon: 'shield', path: '/users' },
   { key: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
@@ -135,7 +134,7 @@ export const ROLE_FLOW = {
   ],
   financial_analyst: [
     { to: '/fuel', label: 'Fuel logs', desc: 'Review fuel consumption' },
-    { to: '/expenses', label: 'Expenses', desc: 'Audit operational spend' },
+    
     { to: '/reports', label: 'Reports', desc: 'ROI & cost analytics' },
   ],
 };

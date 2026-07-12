@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { timeAgo } from '../utils/date';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboard as dashApi, maintenance as maintApi, reports as repApi, activity as actApi } from '../api';
@@ -424,7 +425,7 @@ export default function Dashboard() {
                       <span className="font-medium">{log.action}</span> {log.entity}
                       {log.detail && <span className="text-slate-400"> — {log.detail}</span>}
                     </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{new Date(log.created_at).toLocaleString()}</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{timeAgo(log.created_at)}</p>
                   </div>
                 </div>
               );

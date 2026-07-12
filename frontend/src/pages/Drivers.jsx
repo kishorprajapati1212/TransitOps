@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { formatDate } from '../utils/date';
 import { useAuth } from '../context/AuthContext';
 import { drivers as drvApi } from '../api';
 import {
@@ -125,7 +126,7 @@ export default function Drivers() {
     { key: 'license_number', label: 'License #' },
     { key: 'license_expiry_date', label: 'Expiry', render: (r) => {
       const exp = isExpired(r.license_expiry_date);
-      return <span className={exp ? 'font-medium text-rose-500' : ''}>{(r.license_expiry_date || '').slice(0, 10)}{exp && ' ⚠️'}</span>;
+      return <span className={exp ? 'font-medium text-rose-500' : ''}>{formatDate(r.license_expiry_date)}{exp && ' ⚠️'}</span>;
     }},
     { key: 'safety_score', label: 'Safety', render: (r) => <Badge color={r.safety_score >= 80 ? 'emerald' : r.safety_score >= 60 ? 'amber' : 'rose'}>{r.safety_score}</Badge> },
     { key: 'status', label: 'Status', render: (r) => <Badge color={DRIVER_STATUS_COLORS[r.status] || 'slate'}>{r.status}</Badge> },
@@ -231,7 +232,7 @@ export default function Drivers() {
           {compTarget && (
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
               <p className="text-xs text-slate-400">License: {compTarget.license_number} · Category: {compTarget.license_category}</p>
-              <p className="text-xs text-slate-400">Expiry: {(compTarget.license_expiry_date || '').slice(0, 10)}{isExpired(compTarget.license_expiry_date) ? ' ⚠️ EXPIRED' : ''}</p>
+              <p className="text-xs text-slate-400">Expiry: {formatDate(compTarget.license_expiry_date)}{isExpired(compTarget.license_expiry_date) ? ' ⚠️ EXPIRED' : ''}</p>
             </div>
           )}
         </form>
